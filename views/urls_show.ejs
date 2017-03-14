@@ -1,9 +1,15 @@
+<!-- shows the short and long form of a specific URL -->
+
 <!DOCTYPE html>
 <html>
 <head>
-  <% include partials/_header %>
+  <title>TinyApp <%= shortURL %></title>
 </head>
 <body>
+  <header>
+    <% include partials/_header %>
+  </header>
+
   <%= shortURL %> - <%= urls[shortURL] %>
 </body>
 </html>

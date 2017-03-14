@@ -1,14 +1,19 @@
 const express = require("express");
 const app = express();
-const PORT = process.env.PORT || 8080; // default port 8080
+// sets the port, defaults to 8080
+const PORT = process.env.PORT || 8080;
+// for template engine
 app.set("view engine", "ejs");
+// body-parser middleware that allows us to POST request parameters
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({extended: true}));
+
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
-var tagline = "Any code of your own that you haven't looked at for six or more months might as well have been written by someone else.";
 
 app.get("/", (req, res) => {
   res.end("Hello! Welcome to express_server");

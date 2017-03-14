@@ -1,11 +1,17 @@
+<!-- lists all URLS - short and long form -->
+
 <!DOCTYPE html>
 <html lang='en'>
 <head>
-  <% include partials/_header %>
+  <title>TinyApp Index</title>
 </head>
 <body>
+  <header>
+    <% include partials/_header %>
+  </header>
+
   <ul>
-    <% for (prop in urls) { %>
+    <% for (var prop in urls) { %>
       <li>
         <%= urls[prop] %> - <%= prop %>
       </li>
