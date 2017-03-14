@@ -1,0 +1,25 @@
+{
+  "name": "tiny-app",
+  "version": "1.0.0",
+  "description": "[Project link](https://web-compass.lighthouselabs.ca/projects/w2-url-shortener )",
+  "main": "express_server.js",
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "ejs": "^2.5.6",
+    "express": "^4.15.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kpowch/tiny_app.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kpowch/tiny_app/issues"
+  },
+  "homepage": "https://github.com/kpowch/tiny_app#readme"
+}
