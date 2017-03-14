@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <% include partials/_header %>
+</head>
+<body>
+  <ul>
+    <% for (prop in urls) { %>
+      <li>
+        <%= urls[prop] %> - <%= prop %>
+      </li>
+    <% } %>
+</ul>
+
+<a href='www.link.com'>Link to shorten a URL</a>
+</body>
+</html>
