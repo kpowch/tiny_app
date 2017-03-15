@@ -15,8 +15,7 @@ const urlDatabase = {
 };
 
 function generateRandomString() {
-  let result = Math.random().toString(36).substring(2, 8);
-  return result;
+  return Math.random().toString(36).substring(2, 8);
 }
 
 
@@ -24,31 +23,47 @@ app.get("/", (req, res) => {
   res.send("Hello! Welcome to TinyApp!");
 });
 
-// index page of all URLs
-app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
-  res.render('urls_index', templateVars);
-});
-
-// page to generate short URL given long URL
+// Create short URL for inputted long URL
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
 app.post("/urls", (req, res) => {
-  let newShortURL = generateRandomString();
+  const newShortURL = generateRandomString();
   urlDatabase[newShortURL] = req.body.longURL;
   res.redirect(`/urls/${newShortURL}`);
 });
 
-// page for individual URLs
-// note: this must be after the /urls/new check otherwise new will be interpreted as :id
+// Retrieve index page of all URLs
+app.get("/urls", (req, res) => {
+  const templateVars = { urls: urlDatabase };
+  res.render('urls_index', templateVars);
+});
+
+// Update specified URL
+app.post("/urls/:id", (req, res) => {
+  if(!req.body.longURL) {
+    res.end('need to put new URL');
+  } else {
+    urlDatabase[req.params.id] = req.body.longURL;
+    res.redirect('/urls');
+  }
+});
+
+// Delete specified URL
+app.post("/urls/:id/delete", (req, res) => {
+  delete urlDatabase[req.params.id];
+  res.redirect('/urls');
+});
+
+// Retrieve specified URL
+// note: this must be after the /urls/new and /urls/:id/delete otherwise they don't work
 app.get("/urls/:id", (req, res) => {
   if(!urlDatabase[req.params.id]) {
     res.status(404).send('<img src="https://http.cat/404" alt="404! Page not found." style="width:100%;">');
     // res.sendStatus(404) // equivalent to res.status(404).send('Not Found')
   } else {
-    let templateVars = { shortURL: req.params.id, urls: urlDatabase };
+    const templateVars = { shortURL: req.params.id, urls: urlDatabase };
     res.render("urls_show", templateVars);
   }
 });

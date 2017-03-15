@@ -2,23 +2,42 @@
 
 <!DOCTYPE html>
 <html lang='en'>
+
 <head>
   <title>TinyApp Index</title>
 </head>
+
 <body>
   <header>
     <% include partials/_header %>
   </header>
-  
 
-  <ul>
-    <% for (var prop in urls) { %>
-      <li>
-        <%= urls[prop] %> - <%= prop %>
-      </li>
+  <br />
+
+  <table style='margin:auto'>
+    <% for (let prop in urls) { %>
+      <tr style='height:40px'>
+        <td>
+          <%=prop%> &rarr;
+        </td>
+
+        <td style="min-width:240px">
+          <a href=<%= urls[prop] %>><%= urls[prop] %></a>
+        </td>
+
+        <td style="width:40px">
+          <a href='/urls/<%=prop%>'>Edit</a>
+        </td>
+
+        <td style="width:40px">
+          <form action="/urls/<%=prop%>/delete" method="POST" style="display:inline-block" >
+          <input type="submit" value="Delete">
+          </form>
+        </td>
+
+      </tr>
     <% } %>
-</ul>
-
-<a href='/urls/new'>Link to shorten a URL</a>
+  </table>
 </body>
+
 </html>
