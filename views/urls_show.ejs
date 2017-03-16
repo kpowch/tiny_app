@@ -12,9 +12,9 @@
 
   <h1>ShortURL: <%= shortURL %></h1>
 
-  <form action="/urls/<%= shortURL %>" method="POST">
-    <input id="longURL" type="text" name="longURL" placeholder="<%= urls[shortURL] %>"" style="width: 300px">
-    <input type="submit" value="Update">
+  <form action='/urls/<%= shortURL %>' method='POST'>
+    <input id='longURL' type='text' name='longURL' placeholder='<%= urls[shortURL] %>' style='width: 300px'>
+    <input type='submit' value='Update'>
   </form>
 </body>
 </html>
