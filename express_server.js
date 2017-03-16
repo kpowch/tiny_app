@@ -22,9 +22,13 @@ function generateRandomString() {
   return Math.random().toString(36).substring(2, 8);
 }
 
-
+// note they both go to /urls because there is no login page
 app.get('/', (req, res) => {
-  res.send('Hello! Welcome to TinyApp!');
+  if(!req.cookies['username']) {
+    res.redirect('/urls');
+  } else {
+    res.redirect('/login')
+  }
 });
 
 // to handle a login/save cookie for a user
@@ -59,11 +63,15 @@ app.post('/urls', (req, res) => {
 
 // Retrieve index page of all URLs
 app.get('/urls', (req, res) => {
-  const templateVars = {
-    urls: urlDatabase,
-    username: req.cookies['username']
-  };
-  res.render('urls_index', templateVars);
+  //if(!req.cookies['username']) {
+    // return 401 response with error message and link to /login
+  //} else {
+    const templateVars = {
+      urls: urlDatabase,
+      username: req.cookies['username']
+    };
+    res.render('urls_index', templateVars);
+  //}
 });
 
 // Update specified URL
@@ -87,7 +95,6 @@ app.post('/urls/:id/delete', (req, res) => {
 app.get('/urls/:id', (req, res) => {
   if(!urlDatabase[req.params.id]) {
     res.status(404).send("<img src='https://http.cat/404' alt='404! Page not found.' style='width:100%;'>");
-    // res.sendStatus(404) // equivalent to res.status(404).send('Not Found')
   } else {
     const templateVars = {
       shortURL: req.params.id,

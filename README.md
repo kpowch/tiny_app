@@ -1,6 +1,6 @@
 # TinyApp
 ## W2D2-5 Project 2
-[Project link](https://web-compass.lighthouselabs.ca/projects/w2-url-shortener )
+[Project link](https://web-compass.lighthouselabs.ca/projects/w2-url-shortener)
 
 As of 2017-03-14
 
@@ -14,41 +14,29 @@ You'll get introduced to some more advanced JavaScript and node concepts and als
 By the end of the week you will hopefully also have deployed it the "Cloud" so that anyone can use it.
 
 ## Functional Requirements
-As an avid twitter poster, 
-I want to be able to shorten links 
-so that I can fit more non-link text in my tweets.
-
+As an avid twitter poster, I want to be able to shorten links so that I can fit more non-link text in my tweets.
 <ul>
-<li> When I visit `http://localhost:3000/` <br>
-Then I see a form which contains a field to submit a URL and a button
+<li> When I visit `http://localhost:3000/` <br> Then I see a form which contains a field to submit a URL and a button
 
-<li> When I fill in the form with a URL and submit it  <br>
-Then I see a page with the original URL, a short URL and link to go back to the submission form
+<li> When I fill in the form with a URL and submit it <br> Then I see a page with the original URL, a short URL and link to go back to the submission form
 </ul>
 
 As an avid twitter poster, 
-I want to be able to see how many times my subscribers visit my links 
-so that I can learn what content they like.
-
+I want to be able to see how many times my subscribers visit my links so that I can learn what content they like.
 <ul>
-<li> When I visit `http://localhost:3000/` <br>
-Then I see a login form
+<li> When I visit `http://localhost:3000/` <br> Then I see a login form
 
-<li> When I submit the login form <br>  
-  Then I am logged in
+<li> When I submit the login form <br> Then I am logged in
 
-<li> Given I submitted links when I was logged in When I visit `/urls` <br>
-Then I see my links and the number of visits each had
+<li> Given I submitted links when I was logged in When I visit `/urls` <br> Then I see my links and the number of visits each had
 </ul>
 
-As a twitter reader, 
-I want to be able to visit sites via shortened links, 
-so that I can read interesting content.
-
+As a twitter reader, I want to be able to visit sites via shortened links, so that I can read interesting content.
 <ul>
 <li> When I visit a short link <br>
 Then I am redirected to the page corresponding to the short URL's original URL
 </ul>
+
 
 ## Technical Specification
 ### `GET /`
@@ -97,22 +85,23 @@ if user is logged in: returns a 200 response, HTML with:
 
 ### `GET /urls/:id`
 
-if url w/ :id does not exist:
-returns a 404 response, HTML with a relevant error message
-if user is not logged in:
-returns a 401 response, HTML with a relevant error message and a link to /login
-if logged in user does not match the user that owns this url:
-returns a 403 response, HTML with a relevant error message
-if all is well:
-returns a 200 response, HTML with:
-the short url
-date created (stretch)
-number of visits (stretch)
-number of unique visits (stretch)
-a form, which contains:
-the long url
-"update" button -> POST /urls/:id
-"delete" button -> POST /urls/:id/delete
+if url with `:id` does not exist: returns a 404 response, HTML with a relevant error message
+
+if user is not logged in: returns a 401 response, HTML with a relevant error message and a link to /login
+
+if logged in user does not match the user that owns this url: returns a 403 response, HTML with a relevant error message
+
+if all is well: returns a 200 response, HTML with:
+<ul>
+<li> the short url
+<li> date created (stretch)
+<li> number of visits (stretch)
+<li> number of unique visits (stretch)
+<li> a form, which contains:
+<li> the long url
+<li> "update" button -> `POST /urls/:id`
+<li> "delete" button -> `POST /urls/:id/delete`
+</ul>
 
 ### `GET /u/:id`
 
@@ -122,40 +111,36 @@ otherwise: returns a 404 response, HTML with a relevant error message
 
 ### `POST /urls`
 
-if user is logged in:
-generates a shortURL, saves the link and associates it with the user
-redirect -> /urls/:id
-if user is not logged in:
-returns a 401 response, HTML with a relevant error message and a link to /login
+if user is logged in: generates a shortURL, saves the link and associates it with the user, then redirect -> `/urls/:id`
+
+if user is not logged in: returns a 401 response, HTML with a relevant error message and a link to `/login`
 
 ### `POST /urls/:id`
 
-if url with :id does not exist:
-returns a 404 response, HTML with a relevant error message
-if user is not logged in:
-returns a 401 response, HTML with a relevant error message and a link to /login
-if user does not match the url owner:
-returns a 403 response, HTML with a relevant error message
-if all is well:
-updates the url
-redirect -> /urls/:id
+if url with `:id` does not exist: returns a 404 response, HTML with a relevant error message
+
+if user is not logged in: returns a 401 response, HTML with a relevant error message and a link to `/login`
+
+if user does not match the url owner: returns a 403 response, HTML with a relevant error message
+
+if all is well: updates the url, then redirect -> `/urls/:id`
 
 ### `GET /login`
 
-if user is logged in:
-redirect -> /
-if user is not logged in:
-returns a 200 response, HTML with:
-a form which contains:
-input fields for email and password
-submit button -> POST /login
+if user is logged in: redirect -> `/`
+
+if user is not logged in: returns a 200 response, HTML with:
+<ul> 
+<li> a form which contains:
+<li> input fields for email and password
+<li> submit button -> `POST /login`
+</ul>
 
 ### `GET /register`
 
 if user is logged in: redirect -> `/`
 
-if user is not logged in: returns a 200 response, HTML with:
-a form, which contains:
+if user is not logged in: returns a 200 response, HTML with a form, which contains:
 <ul>
 <li> input fields for email and password
 <li> "register" button -> `POST /register`
@@ -163,34 +148,38 @@ a form, which contains:
 
 ### `POST /register`
 
-if email or password are empty:
-returns a 400 response, with a relevant error message
-if email already exists:
-returns a 400 response, with a relevant error message
+if email or password are empty: returns a 400 response, with a relevant error message
+
+if email already exists: returns a 400 response, with a relevant error message
+
 if all is well:
-creates a user
-encrypts their password with bcrypt
-sets a cookie
-redirect -> /
+<ul>
+<li> creates a user
+<li> encrypts their password with bcrypt
+<li> sets a cookie
+<li> redirect -> `/`
+</ul>
 
 ### `POST /login`
 
 if email & password params match an existing user:
-sets a cookie
-redirect -> /
-if they don't match:
-returns a 401 response, HTML with a relevant error message
+<ul>
+<li> sets a cookie
+<li> redirect -> `/`
+</ul>
+
+if they don't match: returns a 401 response, HTML with a relevant error message
 
 ### `POST /logout`
+
+for every logout,
 <ul>
 <li> deletes cookie
 <li> redirect -> `/`
 </ul>
 
 
----
-
-THE SITE HEADER:
+### THE SITE HEADER:
 
 if a user is logged in, the header shows:
 <ul>
