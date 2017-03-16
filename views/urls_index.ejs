@@ -21,17 +21,17 @@
           <%=prop%> &rarr;
         </td>
 
-        <td style="min-width:240px">
+        <td style='min-width:240px'>
           <a href=<%= urls[prop] %>><%= urls[prop] %></a>
         </td>
 
-        <td style="width:40px">
+        <td style='width:40px'>
           <a href='/urls/<%=prop%>'>Edit</a>
         </td>
 
-        <td style="width:40px">
-          <form action="/urls/<%=prop%>/delete" method="POST" style="display:inline-block" >
-          <input type="submit" value="Delete">
+        <td style='width:40px'>
+          <form action='/urls/<%=prop%>/delete' method='POST' style='display:inline-block' >
+          <input type='submit' value='Delete'>
           </form>
         </td>
 

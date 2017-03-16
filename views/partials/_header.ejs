@@ -1,11 +1,28 @@
 <!-- Header partial -->
-<div style="background:lightblue; padding:10px">
-  <h2 style="text-align:center">Welcome to TinyApp!!</h2>
-  <h3 style="text-align:center"> -- where we make your URLs tiny -- </h3>
+<div style='background:lightblue; padding:10px'>
+  <h2 style='text-align:center'>Welcome to TinyApp!!</h2>
+  <h3 style='text-align:center'> -- where we make your URLs tiny -- </h3>
 </div>
 
-<div style="background:lightblue; padding:10px">
-  <a href="/urls">Home</a>
+<div style='background:lightblue; padding:10px'>
+  <% if(!username) { %>
+    <form action='/login' method='POST'>
+      <input id='username' type='text' name='username' placeholder='Enter your username' style='width: 300px'>
+      <input type='submit' value='Login'>
+    </form>
+  <% } else { %>
+    <div style='display:inline-block'>
+      Welcome <%=username%>
+
+      <form action='/logout' method='POST' style='display:inline-block' >
+        <input type='submit' value='Logout'>
+      </form>
+    </div>
+  <% } %>
+
+
+<div style='background:lightblue; padding:10px'>
+  <a href='/urls'>Home</a>
   <p>
     Want to shorten a URL? <a href='/urls/new'>Click here!</a>
   </p>
