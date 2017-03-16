@@ -18,16 +18,72 @@ const urlDatabase = {
   '9sm5xK': 'http://www.google.com'
 };
 
-function generateRandomString() {
-  return Math.random().toString(36).substring(2, 8);
+const users = {
+  'userRandomID': {
+    id: 'userRandomID',
+    name: 'John Smith',
+    email: 'user@example.com',
+    password: 'purple-monkey-dinosaur'
+  },
+  'user2RandomID': {
+    id: 'user2RandomID',
+    name: 'Janice Smart',
+    email: 'user2@example.com',
+    password: 'dishwasher-funk'
+  }
+};
+
+function generateRandomString(length) {
+  return Math.random().toString(36).substring(2, length + 2);
+}
+
+function isUnique(propertyKey, currentValue) {
+  let ans = true;
+
+  for (let key in users) {
+    if (users[key][propertyKey] === currentValue) {
+      ans = false;
+      break;
+    }
+  }
+  return ans;
 }
 
 // note they both go to /urls because there is no login page
 app.get('/', (req, res) => {
   if(!req.cookies['username']) {
-    res.redirect('/urls');
+    res.send('not logged in');
   } else {
-    res.redirect('/login')
+    res.send('logged in');
+  }
+});
+
+// user registration
+app.get('/register', (req, res) => {
+  const templateVars = {
+    username: req.cookies['username']
+  };
+  res.render('urls_register', templateVars);
+});
+
+app.post('/register', (req, res) => {
+  const isEmailUnique = isUnique('email', req.body.email);
+  // console.log('unique?', isEmailUnique);
+
+  if(req.body.name && req.body.email && req.body.password && isEmailUnique) {
+    let user_id = 'user' + generateRandomString(5);
+    users[username] = {
+      id: username,
+      name: req.body.name,
+      email: req.body.email,
+      password: req.body.password
+    };
+    // console.log(users);
+    res.cookie('user_id', user_id);
+    res.send('registration successful');
+  } else {
+    res.status(400);
+    res.send('you left a field blank or your email is taken');
   }
 });
 
@@ -56,7 +112,7 @@ app.get('/urls/new', (req, res) => {
 });
 
 app.post('/urls', (req, res) => {
-  const newShortURL = generateRandomString();
+  const newShortURL = generateRandomString(6);
   urlDatabase[newShortURL] = req.body.longURL;
   res.redirect(`/urls/${newShortURL}`);
 });

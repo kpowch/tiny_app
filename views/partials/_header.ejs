@@ -6,20 +6,7 @@
 </div>
 
 <div style='background:lightblue; padding:10px'>
-  <% if(!username) { %>
-    <form action='/login' method='POST'>
-      <input id='username' type='text' name='username' placeholder='Enter your username' style='width: 300px'>
-      <input type='submit' value='Login'>
-    </form>
-  <% } else { %>
-    <div style='display:inline-block'>
-      Welcome <%=username%>
 
-      <form action='/logout' method='POST' style='display:inline-block' >
-        <input type='submit' value='Logout'>
-      </form>
-    </div>
-  <% } %>
 
 
 <div style='background:lightblue; padding:10px'>
