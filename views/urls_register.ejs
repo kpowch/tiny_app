@@ -1,0 +1,25 @@
+<!-- user registration page -->
+
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+    <title>Registration</title>
+  </head>
+
+  <body>
+    <header>
+      <% include partials/_header %>
+    </header>
+
+    <form action='/register' method='POST'>
+      Name: <input type='text' name='name'>
+      Email: <input type='email' name='email'>
+      Password: <input type='password' name='password'>
+      <button>submit</button>
+    </form>
+
+    <footer>
+      <% include partials/_footer %>
+    </footer>
+  </body>
+</html>
