@@ -80,7 +80,7 @@ app.get('/register', (req, res) => {
   } else {
     let templateVars = {
       user: null
-    }
+    };
     res.render('urls_register', templateVars);
   }
 });
@@ -118,14 +118,14 @@ app.get('/login', (req, res) => {
 
 // to handle a login/save cookie for a user
 app.post('/login', (req, res) => {
-  const isMatch = passwordMatch(req.body.email, req.body.password)
+  const isMatch = passwordMatch(req.body.email, req.body.password);
 
   if (isMatch) {
-    res.cookie('user_id', isMatch)
+    res.cookie('user_id', isMatch);
     res.redirect('/');
   } else {
     res.status(403);
-    res.send('password or email incorrect')
+    res.send('password or email incorrect');
   }
 });
 
@@ -137,13 +137,17 @@ app.post('/logout', (req, res) => {
 
 // Create short URL for inputted long URL
 app.get('/urls/new', (req, res) => {
-  let templateVars = {
-    user: undefined
-  };
-  if (req.cookies.user_id) {
-    templateVars.user = usersDatabase[req.cookies.user_id]
+  if(req.cookies.user_id) {
+    let templateVars = {
+      user: usersDatabase[req.cookies.user_id]
+    };
+    res.render('urls_new', templateVars);
+  } else {
+    res.redirect('/login');
   }
-  res.render('urls_new', templateVars);
+
+
+
 });
 
 app.post('/urls', (req, res) => {
@@ -159,7 +163,7 @@ app.get('/urls', (req, res) => {
     user: undefined
   };
   if (req.cookies.user_id) {
-    templateVars.user = usersDatabase[req.cookies.user_id]
+    templateVars.user = usersDatabase[req.cookies.user_id];
   }
 
   res.render('urls_index', templateVars);
@@ -191,7 +195,7 @@ app.get('/urls/:id', (req, res) => {
     user: undefined
   };
   if (req.cookies.user_id) {
-    templateVars.user = usersDatabase[req.cookies.user_id]
+    templateVars.user = usersDatabase[req.cookies.user_id];
   }
 
   if(!urlDatabase[req.params.id]) {
@@ -209,7 +213,7 @@ app.get('/u/:shortURL', (req, res) => {
     user: undefined
   };
   if (req.cookies.user_id) {
-    templateVars.user = usersDatabase[req.cookies.user_id]
+    templateVars.user = usersDatabase[req.cookies.user_id];
   }
 
   if(!urlDatabase[req.params.shortURL]) {
