@@ -12,36 +12,38 @@
     <% include partials/_header %>
   </header>
 
-  <p>
-    <a href='/urls/new'>Create a New Short Link!</a>
-  </p>
+  <div style='font-family:sans-serif; text-align:center'>
+    <p>
+      <a href='/urls/new'>Create a New Short Link!</a>
+    </p>
 
-  <table style='margin:auto'>
-    <% for (let prop in urls) { %>
-        <tr style='height:40px'>
-        <td>
-          <%=prop%> &rarr;
-        </td>
+    <table style='margin:auto'>
+      <% for (let prop in urls) { %>
+          <tr style='height:40px'>
+          <td>
+            <%=prop%>:
+          </td>
 
-        <td style='min-width:240px'>
-          <a href=<%= urls[prop].longURL %>><%= urls[prop].longURL %></a>
-        </td>
+          <td style='min-width:240px'>
+            <a href=<%= urls[prop].longURL %>><%= urls[prop].longURL %></a>
+          </td>
 
-        <td style='width:40px'>
-          <form action='/urls/<%=prop%>' method='GET' style='display:inline-block' >
-          <input type='submit' value='Edit'>
-          </form>
-        </td>
+          <td style='width:40px'>
+            <form action='/urls/<%=prop%>' method='GET' style='display:inline-block' >
+            <input type='submit' value='Edit' style="font-family: sans-serif; font-size: 18px;">
+            </form>
+          </td>
 
-        <td style='width:40px'>
-          <form action='/urls/<%=prop%>/delete' method='POST' style='display:inline-block' >
-          <input type='submit' value='Delete'>
-          </form>
-        </td>
+          <td style='width:40px'>
+            <form action='/urls/<%=prop%>/delete' method='POST' style='display:inline-block' >
+            <input type='submit' value='Delete' style="font-family: sans-serif; font-size: 18px;">
+            </form>
+          </td>
 
-      </tr>
-    <% } %>
-  </table>
+        </tr>
+      <% } %>
+    </table>
+  </div>
 
   <footer>
     <% include partials/_footer %>

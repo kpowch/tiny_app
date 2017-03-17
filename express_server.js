@@ -1,11 +1,11 @@
 const express = require('express');
 // const cookieParser = require('cookie-parser'); // cookie version
-const cookieSession = require('cookie-session') // session version
+const cookieSession = require('cookie-session'); // session version
 const bcrypt = require('bcrypt');
 
 // body-parser middleware that allows us to POST request parameters
 const bodyParser = require('body-parser');
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
 // ----- DEFINE APP AND MIDDLEWARE -----
 const app = express();
@@ -13,7 +13,7 @@ app.set('view engine', 'ejs');
 // app.use(cookieParser());
 app.use(cookieSession({
   name: 'session',
-  keys: process.env.SESSION_SECRET || 'encryptingstuff',
+  secret: 'encryptingstuff',
   // cookie options
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }));
@@ -23,6 +23,7 @@ app.use(bodyParser.urlencoded({
 }));
 
 // ----- HARDCODED DATABASES -----
+// TODO: export database to a file or something so that new user info is kept
 const urlDatabase = {
   'b2xVn2': {
     longURL: 'http://www.lighthouselabs.ca',
@@ -79,20 +80,23 @@ function passwordMatch(email, password) {
   return false;
 }
 
-// returns object of urls that below to the id user
+// returns object of urls that belong to the id user
 function urlsForUser(id) {
   let urlsForUser = {};
   for (let prop in urlDatabase) {
     if (urlDatabase[prop].userID === id) {
-      urlsForUser[prop] = urlDatabase[prop]
+      urlsForUser[prop] = urlDatabase[prop];
     }
   }
   return urlsForUser;
 }
 
 // ----- ENDPOINT FUNCTIONS -----
+
+// root page. if logged in, go to /urls; otherwise go to /login
+// TODO: nothing
 app.get('/', (req, res) => {
-  if(req.cookies.user_id) {
+  if(req.session.user_id) {
     res.redirect('/urls');
   } else {
     res.redirect('/login');
@@ -101,7 +105,7 @@ app.get('/', (req, res) => {
 
 // user registration
 app.get('/register', (req, res) => {
-  if(req.cookies.user_id) {
+  if(req.session.user_id) {
     res.redirect('/urls');
   } else {
     let templateVars = {
@@ -115,14 +119,15 @@ app.post('/register', (req, res) => {
   const emailExists = propInUserDatabase('email', req.body.email);
 
   if(req.body.name && req.body.email && req.body.password && !emailExists) {
-    let user_id = 'user' + generateRandomString(5);
-    usersDatabase[user_id] = {
-      id: user_id,
+    let randomUserId = 'user' + generateRandomString(5);
+    usersDatabase[randomUserId] = {
+      id: randomUserId,
       name: req.body.name,
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 10)
     };
-    res.cookie('user_id', user_id);
+    req.session.user_id = randomUserId;
+
     res.redirect('/urls');
   } else {
     res.status(400);
@@ -131,7 +136,7 @@ app.post('/register', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  if(req.cookies.user_id) {
+  if(req.session.user_id) {
     res.redirect('/urls');
   } else {
     let templateVars = {
@@ -146,7 +151,7 @@ app.post('/login', (req, res) => {
   const isMatch = passwordMatch(req.body.email, req.body.password);
 
   if (isMatch) {
-    res.cookie('user_id', isMatch);
+    req.session['user_id'] = isMatch;
     res.redirect('/');
   } else {
     res.status(403);
@@ -156,16 +161,17 @@ app.post('/login', (req, res) => {
 
 // logout user and clear cookies
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id');
+  //res.clearCookie('user_id');
+  delete req.session.user_id;
   res.redirect('/');
 });
 
 // Create short URL for inputted long URL
 //TODO the link has to start with http:// - should make an error? or concatenate?
 app.get('/urls/new', (req, res) => {
-  if(req.cookies.user_id) {
+  if(req.session.user_id) {
     let templateVars = {
-      user: usersDatabase[req.cookies.user_id]
+      user: usersDatabase[req.session.user_id]
     };
     res.render('urls_new', templateVars);
   } else {
@@ -173,27 +179,35 @@ app.get('/urls/new', (req, res) => {
   }
 });
 
+// retrieve index page of all URLs belonging to a user
+// TODO:
+app.get('/urls', (req, res) => {
+  if (req.session.user_id) {
+    const templateVars = {
+      urls: urlsForUser(req.session.user_id),
+      user: usersDatabase[req.session.user_id]
+    };
+    res.render('urls_index', templateVars);
+  } else {
+    res.status(401);
+    res.render('urls_error', {
+      user: null,
+      statusCode: 401,
+      message: 'User not logged in'
+    });
+  }
+});
+
 app.post('/urls', (req, res) => {
   const newShortURL = generateRandomString(6);
   urlDatabase[newShortURL] = {
     longURL: req.body.longURL,
-    userID: req.cookies.user_id
+    userID: req.session.user_id
   };
   res.redirect(`/urls/${newShortURL}`);
 });
 
-// Retrieve index page of all URLs
-app.get('/urls', (req, res) => {
-  if (req.cookies.user_id) {
-    const templateVars = {
-      urls: urlsForUser(req.cookies.user_id),
-      user: usersDatabase[req.cookies.user_id]
-    };
-    res.render('urls_index', templateVars);
-  } else {
-    res.send('not logged in')
-  }
-});
+
 
 // Update specified URL
 app.post('/urls/:id', (req, res) => {
@@ -207,11 +221,11 @@ app.post('/urls/:id', (req, res) => {
 
 // Delete specified URL
 app.post('/urls/:id/delete', (req, res) => {
-  if(urlDatabase[req.params.id].userID === req.cookies.user_id) {
+  if(urlDatabase[req.params.id].userID === req.session.user_id) {
     delete urlDatabase[req.params.id];
     res.redirect('/urls');
   } else {
-    res.send('you can only delete your own links')
+    res.send('you can only delete your own links');
   }
 });
 
@@ -222,15 +236,15 @@ app.get('/urls/:id', (req, res) => {
     res.status(404).send("<img src='https://http.cat/404' alt='404! Page not found.' style='width:100%;'>");
   }
 
-  if (urlDatabase[req.params.id].userID === req.cookies.user_id) {
+  if (urlDatabase[req.params.id].userID === req.session.user_id) {
     const templateVars = {
       shortURL: req.params.id,
       urls: urlDatabase,
-      user: usersDatabase[req.cookies.user_id]
+      user: usersDatabase[req.session.user_id]
     };
     res.render('urls_show', templateVars);
   } else {
-    res.send('you can only edit your own links')
+    res.send('you can only edit your own links');
   }
 });
 
