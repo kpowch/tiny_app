@@ -38,13 +38,13 @@ const urlDatabase = {
 const usersDatabase = {
   'userRandomID': {
     id: 'userRandomID',
-    name: 'John Smith',
+    name: 'User Namename',
     email: 'user@example.com',
     password: bcrypt.hashSync('purple-monkey-dinosaur', 10)
   },
   'user2RandomID': {
     id: 'user2RandomID',
-    name: 'Janice Smart',
+    name: 'Cool Lastname',
     email: 'user2@example.com',
     password: bcrypt.hashSync('dishwasher-funk', 10)
   }
@@ -102,6 +102,150 @@ app.get('/', (req, res) => {
   }
 });
 
+// url index page. if logged in, shows urls belonging to user; otherwise error to login.
+app.get('/urls', (req, res) => {
+  if (req.session.user_id) {
+    const templateVars = {
+      urls: urlsForUser(req.session.user_id),
+      user: usersDatabase[req.session.user_id]
+    };
+    res.render('urls_index', templateVars);
+  } else {
+    res.status(401);
+    res.render('urls_error', {
+      user: null,
+      statusCode: 401,
+      message: 'Please log in or register'
+    });
+  }
+});
+
+// create new shortURL. if logged in, render create new page; otherwise error to login
+// TODO the link has to start with http:// - should make an error? or concatenate on?
+app.get('/urls/new', (req, res) => {
+  if(req.session.user_id) {
+    let templateVars = {
+      user: usersDatabase[req.session.user_id]
+    };
+    res.render('urls_new', templateVars);
+  } else {
+    res.status(401);
+    res.render('urls_error', {
+      user: null,
+      statusCode: 401,
+      message: 'Please log in or register'
+    });
+  }
+});
+
+// show information of the current shortURL and allow edits
+// note: this must be after the /urls/new and /urls/:id/delete otherwise they don't work
+app.get('/urls/:id', (req, res) => {
+  // if the user is not logged in, return 401 response
+  if(!req.session.user_id) {
+    res.status(401);
+    res.render('urls_error', {
+      user: null,
+      statusCode: 401,
+      message: 'Please log in or register'
+    });
+  // if url doesn't exist, send 404 response
+  } else if (!urlDatabase[req.params.id]) {
+    res.status(404);
+    const templateVarsError = {
+      user: usersDatabase[req.session.user_id],
+      statusCode: 404,
+      message: req.params.id + ' is not a valid shortURL'
+    };
+    res.render('urls_error', templateVarsError);
+  // if user does not own url, return 403 response
+  } else if (urlDatabase[req.params.id].userID !== req.session.user_id) {
+    res.status(403);
+    const templateVarsError2 = {
+      user: usersDatabase[req.session.user_id],
+      statusCode: 403,
+      message: req.params.id + ' is not a link that belongs to you.'
+    };
+    res.render('urls_error', templateVarsError2);
+  // otherwise, user is logged in, url exists and belongs to user, and page can be shown
+  } else {
+    const templateVars = {
+      shortURL: req.params.id,
+      urls: urlDatabase,
+      user: usersDatabase[req.session.user_id]
+    };
+    res.render('urls_show', templateVars);
+  }
+});
+
+// response to delete button.
+// TODO: might not have to check if it belongs to user since user can only see the ones that belong to them
+app.post('/urls/:id/delete', (req, res) => {
+  if(urlDatabase[req.params.id].userID === req.session.user_id) {
+    delete urlDatabase[req.params.id];
+    res.redirect('/urls');
+  } else {
+    res.send('you can only delete your own links');
+  }
+});
+
+// redirect short URLs to their longURL page
+app.get('/u/:shortURL', (req, res) => {
+  if(urlDatabase[req.params.shortURL]) {
+    res.redirect(urlDatabase[req.params.shortURL].longURL);
+  } else {
+    res.status(404);
+    const templateVarsError = {
+      user: usersDatabase[req.session.user_id],
+      statusCode: 404,
+      message: 'This is not a valid address.'
+    };
+    res.render('urls_error', templateVarsError);
+  }
+});
+
+// response to create new url button
+app.post('/urls', (req, res) => {
+  if (req.session.user_id) {
+    const newShortURL = generateRandomString(6);
+    urlDatabase[newShortURL] = {
+      longURL: req.body.longURL,
+      userID: req.session.user_id
+    };
+    res.redirect(`/urls/${newShortURL}`);
+  } else {
+    res.status(401);
+    res.render('urls_error', {
+      user: null,
+      statusCode: 401,
+      message: 'Please log in or register'
+    });
+  }
+});
+
+// response to update url button.
+// TODO: make check if edited url is empty or doesn't start with html
+app.post('/urls/:id', (req, res) => {
+  if(!req.body.longURL) {
+    res.end('need to put new URL');
+  } else {
+    urlDatabase[req.params.id]['longURL'] = req.body.longURL;
+    res.redirect('/urls/' + req.params.id);
+  }
+});
+
+// login. if already logged in, redirect; otherwise render login page
+app.get('/login', (req, res) => {
+  if(req.session.user_id) {
+    res.redirect('/');
+  } else {
+    let templateVars = {
+      user: null
+    };
+    res.render('urls_login', templateVars);
+  }
+});
+
 // user registration. if logged in, redirect to root; else, render the register page
 app.get('/register', (req, res) => {
   if(req.session.user_id) {
@@ -151,20 +295,6 @@ app.post('/register', (req, res) => {
   }
 });
 
-// login. if already logged in, redirect; otherwise render login page
-// TODO: STATUS CODE ERROR FOR 200
-app.get('/login', (req, res) => {
-  if(req.session.user_id) {
-    res.redirect('/');
-  } else {
-    res.status(200);
-    let templateVars = {
-      user: null
-    };
-    res.render('urls_login', templateVars);
-  }
-});
-
 // response to login button. if password matches, save cookie and redirect; otherwise, error
 app.post('/login', (req, res) => {
   const isMatch = passwordMatch(req.body.email, req.body.password);
@@ -187,144 +317,6 @@ app.post('/logout', (req, res) => {
   // res.clearCookie('user_id');
   delete req.session.user_id;
   res.redirect('/');
-});
-
-// create new shortURL. if logged in, render create new page; otherwise error to login
-// TODO the link has to start with http:// - should make an error? or concatenate on?
-// TODO: STATUS CODE ERROR FOR 200
-app.get('/urls/new', (req, res) => {
-  if(req.session.user_id) {
-    let templateVars = {
-      user: usersDatabase[req.session.user_id]
-    };
-    res.status(200);
-    res.render('urls_new', templateVars);
-  } else {
-    res.status(401);
-    res.render('urls_error', {
-      user: null,
-      statusCode: 401,
-      message: 'Please log in or register'
-    });
-  }
-});
-
-// url index page. if logged in, shows urls belonging to user; otherwise error to login.
-// TODO: STATUS CODE ERROR FOR 200
-app.get('/urls', (req, res) => {
-  if (req.session.user_id) {
-    const templateVars = {
-      urls: urlsForUser(req.session.user_id),
-      user: usersDatabase[req.session.user_id]
-    };
-    res.render('urls_index', templateVars);
-    res.status(200);
-  } else {
-    res.status(401);
-    res.render('urls_error', {
-      user: null,
-      statusCode: 401,
-      message: 'Please log in or register'
-    });
-  }
-});
-
-// response to create new url button
-app.post('/urls', (req, res) => {
-  if (req.session.user_id) {
-    const newShortURL = generateRandomString(6);
-    urlDatabase[newShortURL] = {
-      longURL: req.body.longURL,
-      userID: req.session.user_id
-    };
-    res.redirect(`/urls/${newShortURL}`);
-  } else {
-    res.status(401);
-    res.render('urls_error', {
-      user: null,
-      statusCode: 401,
-      message: 'Please log in or register'
-    });
-  }
-});
-
-// response to update url button.
-// TODO: make check if edited url is empty or doesn't start with html
-app.post('/urls/:id', (req, res) => {
-  if(!req.body.longURL) {
-    res.end('need to put new URL');
-  } else {
-    urlDatabase[req.params.id]['longURL'] = req.body.longURL;
-    res.redirect('/urls/' + req.params.id);
-  }
-});
-
-// response to delete button.
-// TODO: might not have to check if it belongs to user since user can only see the ones that belong to them
-app.post('/urls/:id/delete', (req, res) => {
-  if(urlDatabase[req.params.id].userID === req.session.user_id) {
-    delete urlDatabase[req.params.id];
-    res.redirect('/urls');
-  } else {
-    res.send('you can only delete your own links');
-  }
-});
-
-// show information of the current shortURL and allow edits
-// note: this must be after the /urls/new and /urls/:id/delete otherwise they don't work
-// TODO: STATUS CODE ERROR FOR 200
-app.get('/urls/:id', (req, res) => {
-  // if the user is not logged in, return 401 response
-  if(!req.session.user_id) {
-    res.status(401);
-    res.render('urls_error', {
-      user: null,
-      statusCode: 401,
-      message: 'Please log in or register'
-    });
-  // if url doesn't exist, send 404 response
-  } else if (!urlDatabase[req.params.id]) {
-    res.status(404);
-    const templateVarsError = {
-      user: usersDatabase[req.session.user_id],
-      statusCode: 404,
-      message: req.params.id + ' is not a valid shortURL'
-    };
-    res.render('urls_error', templateVarsError);
-  // if user does not own url, return 403 response
-  } else if (urlDatabase[req.params.id].userID !== req.session.user_id) {
-    res.status(403);
-    const templateVarsError2 = {
-      user: usersDatabase[req.session.user_id],
-      statusCode: 403,
-      message: req.params.id + ' is not a link that belongs to you.'
-    };
-    res.render('urls_error', templateVarsError2);
-  // otherwise, user is logged in, url exists and belongs to user, and page can be shown
-  } else {
-    res.status(200);
-    const templateVars = {
-      shortURL: req.params.id,
-      urls: urlDatabase,
-      user: usersDatabase[req.session.user_id]
-    };
-    res.render('urls_show', templateVars);
-  }
-});
-
-// redirect short URLs to their longURL page
-app.get('/u/:shortURL', (req, res) => {
-  if(urlDatabase[req.params.shortURL]) {
-    res.redirect(urlDatabase[req.params.shortURL].longURL);
-  } else {
-    res.status(404);
-    const templateVarsError = {
-      user: usersDatabase[req.session.user_id],
-      statusCode: 404,
-      message: 'This is not a valid address.'
-    };
-    res.render('urls_error', templateVarsError);
-  }
 });
 
 // catchall for any other unvalid addresses
