@@ -18,13 +18,13 @@
 
   <table style='margin:auto'>
     <% for (let prop in urls) { %>
-      <tr style='height:40px'>
+        <tr style='height:40px'>
         <td>
           <%=prop%> &rarr;
         </td>
 
         <td style='min-width:240px'>
-          <a href=<%= urls[prop] %>><%= urls[prop] %></a>
+          <a href=<%= urls[prop].longURL %>><%= urls[prop].longURL %></a>
         </td>
 
         <td style='width:40px'>
