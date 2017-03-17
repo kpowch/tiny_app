@@ -17,11 +17,23 @@
       <a href='/urls/new'>Create a New Short Link!</a>
     </p>
 
+    <h3>Your URLs:</h3>
+
     <table style='margin:auto'>
+      <tr>
+        <th>
+          ShortURLs
+        </th>
+
+        <th>
+          Original LongURLs
+        </th>
+      </tr>
+
       <% for (let prop in urls) { %>
-          <tr style='height:40px'>
+        <tr style='height:40px'>
           <td>
-            <%=prop%>:
+            <a href=u/<%=prop%>><%= prop %></a>
           </td>
 
           <td style='min-width:240px'>
@@ -39,7 +51,6 @@
             <input type='submit' value='Delete' style="font-family: sans-serif; font-size: 18px;">
             </form>
           </td>
-
         </tr>
       <% } %>
     </table>

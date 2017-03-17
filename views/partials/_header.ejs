@@ -9,13 +9,16 @@
   <div style='padding:10px; text-align:center'>
 
   <% if(user) { %>
+      Welcome <%= user.name %> (<%= user.email %>)!
 
-    Welcome <%= user.name %> (<%= user.email %>)!
 
     <form action='/logout' method='POST' style='display:inline-block' >
       <input type='submit' value='Logout' style="font-family: sans-serif; font-size: 18px;">
     </form>
 
+    <div>
+      <a href='/urls'>My Links</a>
+    </div>
   <% } else { %>
 
     <a href='/register'>Register</a>

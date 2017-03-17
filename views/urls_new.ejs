@@ -12,9 +12,12 @@
     </header>
 
     <div style="font-family: sans-serif; text-align: center">
-      <h3>Shorten your URL here</h3>
+      <h3>Shorten your URL</h3>
+
+      <p>
+        Note: address must start with http://
+      </p>
       <form action='/urls' method='POST' style='margin:auto;'>
-        <label for='longURL'>Enter a URL:</label>
         <input id='longURL' type='text' name='longURL' placeholder='http://' style='width: 300px; font-family: sans-serif; font-size: 14px'>
         <input type='submit' value='Submit' style="font-family: sans-serif; font-size: 18px;">
       </form>

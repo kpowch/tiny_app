@@ -93,8 +93,7 @@ function urlsForUser(id) {
 
 // ----- ENDPOINT FUNCTIONS -----
 
-// root page. if logged in, go to /urls; otherwise go to /login
-// TODO: nothing
+// root. if logged in, go to /urls; otherwise go to /login
 app.get('/', (req, res) => {
   if(req.session.user_id) {
     res.redirect('/urls');
@@ -103,10 +102,10 @@ app.get('/', (req, res) => {
   }
 });
 
-// user registration
+// user registration. if logged in, redirect to root; else, render the register page
 app.get('/register', (req, res) => {
   if(req.session.user_id) {
-    res.redirect('/urls');
+    res.redirect('/');
   } else {
     let templateVars = {
       user: null
@@ -115,10 +114,30 @@ app.get('/register', (req, res) => {
   }
 });
 
+// response to register button. if all fields filled out and unique email, login, create cookie, and save user
 app.post('/register', (req, res) => {
   const emailExists = propInUserDatabase('email', req.body.email);
 
-  if(req.body.name && req.body.email && req.body.password && !emailExists) {
+  // if a field is not filled out, error
+  if (!req.body.name || !req.body.email || !req.body.password) {
+    res.status(400);
+    res.render('urls_error', {
+      user: null,
+      statusCode: 400,
+      message: 'Please provide a name, email and password to register.'
+    });
+
+  // if email already exists, error
+  } else if (emailExists) {
+    res.status(400);
+    res.render('urls_error', {
+      user: null,
+      statusCode: 400,
+      message: 'Email is already registered.'
+    });
+
+  //otherwise create the user, hash the password, create cookie, and redirect to root
+  } else {
     let randomUserId = 'user' + generateRandomString(5);
     usersDatabase[randomUserId] = {
       id: randomUserId,
@@ -128,25 +147,25 @@ app.post('/register', (req, res) => {
     };
     req.session.user_id = randomUserId;
 
-    res.redirect('/urls');
-  } else {
-    res.status(400);
-    res.send('you left a field blank or your email is taken');
+    res.redirect('/');
   }
 });
 
+// login. if already logged in, redirect; otherwise render login page
+// TODO: STATUS CODE ERROR FOR 200
 app.get('/login', (req, res) => {
   if(req.session.user_id) {
-    res.redirect('/urls');
+    res.redirect('/');
   } else {
+    res.status(200);
     let templateVars = {
-      user: undefined
+      user: null
     };
     res.render('urls_login', templateVars);
   }
 });
 
-// to handle a login/save cookie for a user
+// response to login button. if password matches, save cookie and redirect; otherwise, error
 app.post('/login', (req, res) => {
   const isMatch = passwordMatch(req.body.email, req.body.password);
 
@@ -154,33 +173,44 @@ app.post('/login', (req, res) => {
     req.session['user_id'] = isMatch;
     res.redirect('/');
   } else {
-    res.status(403);
-    res.send('password or email incorrect');
+    res.status(401);
+    res.render('urls_error', {
+      user: null,
+      statusCode: 401,
+      message: 'Login credentials are incorrect.'
+    });
   }
 });
 
-// logout user and clear cookies
+// response to logout button. delete cookie and redirect
 app.post('/logout', (req, res) => {
-  //res.clearCookie('user_id');
+  // res.clearCookie('user_id');
   delete req.session.user_id;
   res.redirect('/');
 });
 
-// Create short URL for inputted long URL
-//TODO the link has to start with http:// - should make an error? or concatenate?
+// create new shortURL. if logged in, render create new page; otherwise error to login
+// TODO the link has to start with http:// - should make an error? or concatenate on?
+// TODO: STATUS CODE ERROR FOR 200
 app.get('/urls/new', (req, res) => {
   if(req.session.user_id) {
     let templateVars = {
       user: usersDatabase[req.session.user_id]
     };
+    res.status(200);
     res.render('urls_new', templateVars);
   } else {
-    res.redirect('/login');
+    res.status(401);
+    res.render('urls_error', {
+      user: null,
+      statusCode: 401,
+      message: 'Please log in or register'
+    });
   }
 });
 
-// retrieve index page of all URLs belonging to a user
-// TODO:
+// url index page. if logged in, shows urls belonging to user; otherwise error to login.
+// TODO: STATUS CODE ERROR FOR 200
 app.get('/urls', (req, res) => {
   if (req.session.user_id) {
     const templateVars = {
@@ -188,38 +218,49 @@ app.get('/urls', (req, res) => {
       user: usersDatabase[req.session.user_id]
     };
     res.render('urls_index', templateVars);
+    res.status(200);
   } else {
     res.status(401);
     res.render('urls_error', {
       user: null,
       statusCode: 401,
-      message: 'User not logged in'
+      message: 'Please log in or register'
     });
   }
 });
 
+// response to create new url button
 app.post('/urls', (req, res) => {
-  const newShortURL = generateRandomString(6);
-  urlDatabase[newShortURL] = {
-    longURL: req.body.longURL,
-    userID: req.session.user_id
-  };
-  res.redirect(`/urls/${newShortURL}`);
+  if (req.session.user_id) {
+    const newShortURL = generateRandomString(6);
+    urlDatabase[newShortURL] = {
+      longURL: req.body.longURL,
+      userID: req.session.user_id
+    };
+    res.redirect(`/urls/${newShortURL}`);
+  } else {
+    res.status(401);
+    res.render('urls_error', {
+      user: null,
+      statusCode: 401,
+      message: 'Please log in or register'
+    });
+  }
 });
 
-
-
-// Update specified URL
+// response to update url button.
+// TODO: make check if edited url is empty or doesn't start with html
 app.post('/urls/:id', (req, res) => {
   if(!req.body.longURL) {
     res.end('need to put new URL');
   } else {
     urlDatabase[req.params.id]['longURL'] = req.body.longURL;
-    res.redirect('/urls');
+    res.redirect('/urls/' + req.params.id);
   }
 });
 
-// Delete specified URL
+// response to delete button.
+// TODO: might not have to check if it belongs to user since user can only see the ones that belong to them
 app.post('/urls/:id/delete', (req, res) => {
   if(urlDatabase[req.params.id].userID === req.session.user_id) {
     delete urlDatabase[req.params.id];
@@ -229,44 +270,76 @@ app.post('/urls/:id/delete', (req, res) => {
   }
 });
 
-// Retrieve specified URL
+// show information of the current shortURL and allow edits
 // note: this must be after the /urls/new and /urls/:id/delete otherwise they don't work
+// TODO: STATUS CODE ERROR FOR 200
 app.get('/urls/:id', (req, res) => {
-  if (!urlDatabase[req.params.id]) {
-    res.status(404).send("<img src='https://http.cat/404' alt='404! Page not found.' style='width:100%;'>");
-  }
-
-  if (urlDatabase[req.params.id].userID === req.session.user_id) {
+  // if the user is not logged in, return 401 response
+  if(!req.session.user_id) {
+    res.status(401);
+    res.render('urls_error', {
+      user: null,
+      statusCode: 401,
+      message: 'Please log in or register'
+    });
+  // if url doesn't exist, send 404 response
+  } else if (!urlDatabase[req.params.id]) {
+    res.status(404);
+    const templateVarsError = {
+      user: usersDatabase[req.session.user_id],
+      statusCode: 404,
+      message: req.params.id + ' is not a valid shortURL'
+    };
+    res.render('urls_error', templateVarsError);
+  // if user does not own url, return 403 response
+  } else if (urlDatabase[req.params.id].userID !== req.session.user_id) {
+    res.status(403);
+    const templateVarsError2 = {
+      user: usersDatabase[req.session.user_id],
+      statusCode: 403,
+      message: req.params.id + ' is not a link that belongs to you.'
+    };
+    res.render('urls_error', templateVarsError2);
+  // otherwise, user is logged in, url exists and belongs to user, and page can be shown
+  } else {
+    res.status(200);
     const templateVars = {
       shortURL: req.params.id,
       urls: urlDatabase,
       user: usersDatabase[req.session.user_id]
     };
     res.render('urls_show', templateVars);
-  } else {
-    res.send('you can only edit your own links');
   }
 });
 
-// to redirect short URLs to their longURL page
+// redirect short URLs to their longURL page
 app.get('/u/:shortURL', (req, res) => {
-  if(!urlDatabase[req.params.shortURL]) {
-    res.status(404).send("<img src='https://http.cat/404' alt='404! Page not found.' style='width:100%;'>");
-    // res.sendStatus(404) // equivalent to res.status(404).send('Not Found')
-  } else {
+  if(urlDatabase[req.params.shortURL]) {
     res.redirect(urlDatabase[req.params.shortURL].longURL);
+  } else {
+    res.status(404);
+    const templateVarsError = {
+      user: usersDatabase[req.session.user_id],
+      statusCode: 404,
+      message: 'This is not a valid address.'
+    };
+    res.render('urls_error', templateVarsError);
   }
 });
 
-/* TODO: send any error to a custom 404 page. then update the above 404 pages to this page.
-app.get('*', (req, res) => {
-  const templateVars = {
-    user: usersDatabase[req.cookies].name
-  };
+// catchall for any other unvalid addresses
+app.get('/*', (req, res) => {
   res.status(404);
-  res.redirect('urls_404', templateVars);
+  const templateVarsError = {
+    user: null,
+    statusCode: 404,
+    message: 'This is not a valid address.'
+  };
+  if (req.session.user_id) {
+    templateVarsError.user = usersDatabase[req.session.user_id];
+  }
+  res.render('urls_error', templateVarsError);
 });
-*/
 
 app.listen(PORT, () => {
   console.log(`Express Server listening on port ${PORT}!`);
