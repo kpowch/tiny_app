@@ -1,21 +1,28 @@
 const express = require('express');
-const app = express();
-// sets the port, defaults to 8080
-const PORT = process.env.PORT || 3000;
-// for template engine
-app.set('view engine', 'ejs');
-// body-parser middleware that allows us to POST request parameters
-const bodyParser = require('body-parser');
-app.use(bodyParser.urlencoded({extended: true}));
-
-// to track cookies
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
-
-// for password hashing
+// const cookieParser = require('cookie-parser'); // cookie version
+const cookieSession = require('cookie-session') // session version
 const bcrypt = require('bcrypt');
 
+// body-parser middleware that allows us to POST request parameters
+const bodyParser = require('body-parser');
+const PORT = process.env.PORT || 8080;
 
+// ----- DEFINE APP AND MIDDLEWARE -----
+const app = express();
+app.set('view engine', 'ejs');
+// app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: process.env.SESSION_SECRET || 'encryptingstuff',
+  // cookie options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}));
+
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
+
+// ----- HARDCODED DATABASES -----
 const urlDatabase = {
   'b2xVn2': {
     longURL: 'http://www.lighthouselabs.ca',
@@ -42,14 +49,15 @@ const usersDatabase = {
   }
 };
 
+// ----- HELPER FUNCTIONS -----
 
-
-
+// generates a random alphanumeric string of specified length
 function generateRandomString(length) {
   return Math.random().toString(36).substring(2, length + 2);
 }
 
 // returns true if the input value parameter matches that in the user database
+// e.g. ('email', 'email@email.com') checks if email@email.com is an existing email
 function propInUserDatabase(propKey, propValue) {
   for (let key in usersDatabase) {
     if (usersDatabase[key][propKey] === propValue) {
@@ -59,6 +67,8 @@ function propInUserDatabase(propKey, propValue) {
   return false;
 }
 
+// given a email and hashed password, checks if it's in the database
+// returns the matching usersDatabase key (i.e userid) if there's a match; false otherwise
 function passwordMatch(email, password) {
   for (let key in usersDatabase) {
     if (usersDatabase[key].email === email
@@ -69,6 +79,7 @@ function passwordMatch(email, password) {
   return false;
 }
 
+// returns object of urls that below to the id user
 function urlsForUser(id) {
   let urlsForUser = {};
   for (let prop in urlDatabase) {
@@ -79,10 +90,7 @@ function urlsForUser(id) {
   return urlsForUser;
 }
 
-
-
-
-// note they both go to /urls because there is no login page
+// ----- ENDPOINT FUNCTIONS -----
 app.get('/', (req, res) => {
   if(req.cookies.user_id) {
     res.redirect('/urls');
