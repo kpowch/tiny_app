@@ -119,11 +119,12 @@ app.get('/login', (req, res) => {
 // to handle a login/save cookie for a user
 app.post('/login', (req, res) => {
   const isMatch = passwordMatch(req.body.email, req.body.password)
-  console.log('isMatch', isMatch);
+
   if (isMatch) {
     res.cookie('user_id', isMatch)
-    res.redirect('/urls');
+    res.redirect('/');
   } else {
+    res.status(403);
     res.send('password or email incorrect')
   }
 });
