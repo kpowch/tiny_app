@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 // sets the port, defaults to 8080
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 // for template engine
 app.set('view engine', 'ejs');
 // body-parser middleware that allows us to POST request parameters
@@ -18,7 +18,7 @@ const urlDatabase = {
   '9sm5xK': 'http://www.google.com'
 };
 
-const users = {
+const usersDatabase = {
   'userRandomID': {
     id: 'userRandomID',
     name: 'John Smith',
@@ -33,81 +33,115 @@ const users = {
   }
 };
 
+
+
+
+
+
 function generateRandomString(length) {
   return Math.random().toString(36).substring(2, length + 2);
 }
 
-function isUnique(propertyKey, currentValue) {
-  let ans = true;
-
-  for (let key in users) {
-    if (users[key][propertyKey] === currentValue) {
-      ans = false;
-      break;
+// returns true if the input value parameter matches that in the user database
+function propInUserDatabase(propKey, propValue) {
+  for (let key in usersDatabase) {
+    if (usersDatabase[key][propKey] === propValue) {
+      return true;
     }
   }
-  return ans;
+  return false;
 }
+
+function passwordMatch(email, password) {
+  for (let key in usersDatabase) {
+    if (usersDatabase[key].email === email && usersDatabase[key].password === password) {
+      return key;
+    }
+  }
+  return false;
+}
+
+
+
 
 // note they both go to /urls because there is no login page
 app.get('/', (req, res) => {
-  if(!req.cookies['username']) {
-    res.send('not logged in');
+  if(req.cookies.user_id) {
+    res.redirect('/urls');
   } else {
-    res.send('logged in');
+    res.redirect('/login');
   }
 });
 
 // user registration
 app.get('/register', (req, res) => {
-  const templateVars = {
-    username: req.cookies['username']
-  };
-  res.render('urls_register', templateVars);
+  if(req.cookies.user_id) {
+    res.redirect('/urls');
+  } else {
+    let templateVars = {
+      user: null
+    }
+    res.render('urls_register', templateVars);
+  }
 });
 
 app.post('/register', (req, res) => {
-  const isEmailUnique = isUnique('email', req.body.email);
-  // console.log('unique?', isEmailUnique);
+  const emailExists = propInUserDatabase('email', req.body.email);
 
-  if(req.body.name && req.body.email && req.body.password && isEmailUnique) {
+  if(req.body.name && req.body.email && req.body.password && !emailExists) {
     let user_id = 'user' + generateRandomString(5);
-    users[username] = {
-      id: username,
+    usersDatabase[user_id] = {
+      id: user_id,
       name: req.body.name,
       email: req.body.email,
       password: req.body.password
     };
-    // console.log(users);
+    // console.log(usersDatabase);
     res.cookie('user_id', user_id);
-    res.send('registration successful');
+    res.redirect('/urls');
   } else {
     res.status(400);
     res.send('you left a field blank or your email is taken');
   }
 });
 
+app.get('/login', (req, res) => {
+  if(req.cookies.user_id) {
+    res.redirect('/urls');
+  } else {
+    let templateVars = {
+      user: undefined
+    };
+    res.render('urls_login', templateVars);
+  }
+});
+
 // to handle a login/save cookie for a user
 app.post('/login', (req, res) => {
-  if(!req.body.username) {
-    // they put an empty field
-  } else{
-    res.cookie('username', req.body.username);
+  const isMatch = passwordMatch(req.body.email, req.body.password)
+  console.log('isMatch', isMatch);
+  if (isMatch) {
+    res.cookie('user_id', isMatch)
     res.redirect('/urls');
+  } else {
+    res.send('password or email incorrect')
   }
 });
 
 // logout user and clear cookies
 app.post('/logout', (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect('/');
 });
 
 // Create short URL for inputted long URL
 app.get('/urls/new', (req, res) => {
-  const templateVars = {
-    username: req.cookies['username']
+  let templateVars = {
+    user: undefined
   };
+  if (req.cookies.user_id) {
+    templateVars.user = usersDatabase[req.cookies.user_id]
+  }
   res.render('urls_new', templateVars);
 });
 
@@ -119,14 +153,15 @@ app.post('/urls', (req, res) => {
 
 // Retrieve index page of all URLs
 app.get('/urls', (req, res) => {
-  //if(!req.cookies['username']) {
-    // return 401 response with error message and link to /login
-  //} else {
-    const templateVars = {
-      urls: urlDatabase,
-      username: req.cookies['username']
-    };
-    res.render('urls_index', templateVars);
+  let templateVars = {
+    urls: urlDatabase,
+    user: undefined
+  };
+  if (req.cookies.user_id) {
+    templateVars.user = usersDatabase[req.cookies.user_id]
+  }
+
+  res.render('urls_index', templateVars);
   //}
 });
 
@@ -149,20 +184,33 @@ app.post('/urls/:id/delete', (req, res) => {
 // Retrieve specified URL
 // note: this must be after the /urls/new and /urls/:id/delete otherwise they don't work
 app.get('/urls/:id', (req, res) => {
+  let templateVars = {
+    shortURL: req.params.id,
+    urls: urlDatabase,
+    user: undefined
+  };
+  if (req.cookies.user_id) {
+    templateVars.user = usersDatabase[req.cookies.user_id]
+  }
+
   if(!urlDatabase[req.params.id]) {
     res.status(404).send("<img src='https://http.cat/404' alt='404! Page not found.' style='width:100%;'>");
   } else {
-    const templateVars = {
-      shortURL: req.params.id,
-      urls: urlDatabase,
-      username: req.cookies['username']
-    };
     res.render('urls_show', templateVars);
   }
 });
 
 // to redirect short URLs to their longURL page
 app.get('/u/:shortURL', (req, res) => {
+  let templateVars = {
+    shortURL: req.params.id,
+    urls: urlDatabase,
+    user: undefined
+  };
+  if (req.cookies.user_id) {
+    templateVars.user = usersDatabase[req.cookies.user_id]
+  }
+
   if(!urlDatabase[req.params.shortURL]) {
     res.status(404).send("<img src='https://http.cat/404' alt='404! Page not found.' style='width:100%;'>");
     // res.sendStatus(404) // equivalent to res.status(404).send('Not Found')
@@ -175,7 +223,7 @@ app.get('/u/:shortURL', (req, res) => {
 /* TODO: send any error to a custom 404 page. then update the above 404 pages to this page.
 app.get('*', (req, res) => {
   const templateVars = {
-    username: req.cookies['username']
+    user: usersDatabase[req.cookies].name
   };
   res.status(404);
   res.redirect('urls_404', templateVars);

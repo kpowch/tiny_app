@@ -11,6 +11,15 @@
     <% include partials/_header %>
   </header>
 
+  <% if(!user) { %>
+    <form action='/login' method='POST'>
+      Email: <input type='email' name='email'>
+      Password: <input type='password' name='password'>
+      <button>submit</button>
+    </form>
+  <% } else { %>
+    THIS SHOULD NOT BE SHOWING
+  <% } %>
 
   <footer>
     <% include partials/_footer %>

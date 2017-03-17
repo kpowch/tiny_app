@@ -1,13 +1,26 @@
 <!-- Header partial -->
 
-<div style='background:lightblue; padding:10px'>
+<div style='background:lightblue; padding:10px font-family:comic-sans'>
   <h2 style='text-align:center'>Welcome to TinyApp!!</h2>
   <h3 style='text-align:center'> -- where we make your URLs tiny -- </h3>
 </div>
 
 <div style='background:lightblue; padding:10px'>
 
+<% if(user) { %>
 
+  Welcome <%= user.name %>
+
+  <form action='/logout' method='POST' style='display:inline-block' >
+    <input type='submit' value='Logout'>
+  </form>
+
+<% } else { %>
+
+  <a href='/register'>Register</a>
+  <a href='/login'>Login</a>
+
+<% } %>
 
 <div style='background:lightblue; padding:10px'>
   <a href='/urls'>Home</a>
