@@ -14,9 +14,10 @@
     <h3>ShortURL: <%= shortURL %></h3>
 
     <form action='/urls/<%= shortURL %>' method='POST' style='display:inline-block'>
-      <input id='longURL' type='text' name='longURL' placeholder='<%= urls[shortURL].longURL %>' style='width: 300px; font-family: sans-serif; font-size: 14px'>
+      <input id='longURL' type='text' name='longURL' value='<%= urls[shortURL].longURL %>' style='width: 300px; font-family: sans-serif; font-size: 14px'>
       <input type='submit' value='Update' style="font-family: sans-serif; font-size: 18px;">
     </form>
+
     <form action='/urls/<%=shortURL%>/delete' method='POST' style='display:inline-block' >
       <input type='submit' value='Delete' style="font-family: sans-serif; font-size: 18px;">
     </form>
