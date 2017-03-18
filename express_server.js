@@ -1,10 +1,9 @@
 const express = require('express');
 // const cookieParser = require('cookie-parser'); // cookie version
 const cookieSession = require('cookie-session'); // session version
-const bcrypt = require('bcrypt');
-
-// body-parser middleware that allows us to POST request parameters
-const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt'); // password encryption
+const bodyParser = require('body-parser'); // allows us to POST request parameters
+const methodOverride = require('method-override');
 const PORT = process.env.PORT || 3000;
 
 // ----- DEFINE APP AND MIDDLEWARE -----
@@ -21,6 +20,9 @@ app.use(cookieSession({
 app.use(bodyParser.urlencoded({
   extended: true
 }));
+
+// override with POST having ?_method=<method like PUT, POST, DELETE, etc.>
+app.use(methodOverride('_method'))
 
 // ----- HARDCODED DATABASES -----
 // TODO: export database to a file or something so that new user info is kept
@@ -111,7 +113,7 @@ parameters: a url address
 returns: true if valid; false otherwise
 */
 function isValidURL(address) {
-  if (address.substring(0, 7) === 'http://') {
+  if (address.substring(0, 7) === 'http://' || address.substring(0, 8) === 'https://') {
     return true;
   } else {
     return false;
@@ -156,7 +158,7 @@ app.get('/urls', (req, res) => {
 });
 
 /*
-Create new shortURL
+Create new shortURL page
 - if logged in: return 200 response, show site header, show form with text input field
   for original URL and submit button;
 - if not logged in: return 401 response, html with relevant eror message and link to /login
@@ -186,7 +188,7 @@ Specifc shortURL page
 */
 app.get('/urls/:id', (req, res) => {
   const templateVars = {
-    user: usersDatabase[req.session.user_id],
+    user: usersDatabase[req.session.user_id]
   };
   if(!req.session.user_id) {
     res.status(401);
@@ -215,7 +217,7 @@ Response to delete button
 delete URL and remove it from urlDatabase
 */
 // TODO fix else statement
-app.post('/urls/:id/delete', (req, res) => {
+app.delete('/urls/:id/delete', (req, res) => {
   if(urlDatabase[req.params.id].userID === req.session.user_id) {
     delete urlDatabase[req.params.id];
     res.redirect('/urls');
@@ -250,6 +252,7 @@ Response to create new url link
 and redirect to /urls/:id
 - if not logged in: return 401 response, html with relevant eror message and link to /login
 */
+
 app.post('/urls', (req, res) => {
   const templateVars = {
     user: usersDatabase[req.session.user_id]
@@ -266,7 +269,7 @@ app.post('/urls', (req, res) => {
   } else if (!isValidURL(req.body.longURL)) {
     res.status(406);
     templateVars['statusCode'] = 406;
-    templateVars['message'] = 'Please enter valid longURL (starts with http://).';
+    templateVars['message'] = 'Please enter valid longURL (starts with http:// or https://).';
     res.render('urls_error', templateVars);
   } else {
     res.status(401);
@@ -284,7 +287,7 @@ Response to update button
 - if logged in and above cases pass: update url in urlDatabase and redirect to /urls/:id
 */
 // TODO: add checks above
-app.post('/urls/:id', (req, res) => {
+app.put('/urls/:id', (req, res) => {
   if(!isValidURL(req.body.longURL)) {
     res.status(406);
     res.render('urls_error', {
@@ -389,8 +392,7 @@ app.post('/login', (req, res) => {
     templateVars['statusCode'] = 400;
     templateVars['message'] = 'Email or password field empty.';
     res.render('urls_error', templateVars);
-  }
-  else if (isMatch) {
+  } else if (isMatch) {
     req.session['user_id'] = isMatch;
     res.redirect('/');
   } else {
@@ -407,7 +409,7 @@ app.post('/login', (req, res) => {
 Response to logout button
 - delete cookie and redirect to /
 */
-app.post('/logout', (req, res) => {
+app.delete('/logout', (req, res) => {
   // res.clearCookie('user_id');
   req.session.user_id = null;
   res.redirect('/');

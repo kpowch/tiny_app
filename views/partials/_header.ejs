@@ -9,7 +9,7 @@
     <% if(user) { %>
       Welcome <%= user.name %> (<%= user.email %>)!
 
-      <form action='/logout' method='POST' style='display:inline-block' >
+      <form method='POST' action='/logout?_method=DELETE' style='display:inline-block' >
         <input type='submit' value='Logout' style=" font-size: 18px;">
       </form>
 

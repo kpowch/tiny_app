@@ -3,7 +3,6 @@ if logged in only: show site header, table of urls that belong to user (short ur
 long url, edit (GET /urls/:id) and delete (POST /urls/:id/delete) buttons), and a
 link to add new shortURL);
 -->
-<!-- TODO: if no urls, show 'you have no urls' -->
 
 <!DOCTYPE html>
 <html lang='en'>
@@ -46,12 +45,12 @@ link to add new shortURL);
               <a href=<%= urls[prop].longURL %>><%= urls[prop].longURL %></a>
             </td>
             <td style='width:40px'>
-              <form action='/urls/<%=prop%>' method='GET' style='display:inline-block' >
+              <form method='GET' action='/urls/<%=prop%>' style='display:inline-block' >
               <input type='submit' value='Edit' style="font-family: sans-serif; font-size: 18px;">
               </form>
             </td>
             <td style='width:40px'>
-              <form action='/urls/<%=prop%>/delete' method='POST' style='display:inline-block' >
+              <form method='POST' action='/urls/<%=prop%>/delete?_method=DELETE' style='display:inline-block' >
               <input type='submit' value='Delete' style="font-family: sans-serif; font-size: 18px;">
               </form>
             </td>
