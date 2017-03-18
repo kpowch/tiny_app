@@ -64,7 +64,7 @@ function generateRandomString(length) {
 /*
 Checks if a property-value pair exists in an object.
 parameters: propKey (e.g. 'email'), propValue (e.g. 'example@email.com'), and object (e.g. usersDatabase)
-returns: true if the propKey in the object is the propValue
+returns: true if value of propKey in the object is propValue
 */
 function propInUserDatabase(object, propKey, propValue) {
   for (let key in object) {
@@ -92,7 +92,7 @@ function passwordMatch(email, password) {
 
 /*
 Searches for the URLs that belong to a specific user
-parameters: id (str) - userid
+parameters: id (str) (i.e. userid)
 returns: an object of urls that below to the user
 */
 function urlsForUser(id) {
@@ -106,8 +106,8 @@ function urlsForUser(id) {
 }
 
 /*
-Checks if the input URL (longURL) is valid - i.e. starts with http:// and not empty
-parameters: url
+Checks if the input URL (longURL) is valid - i.e. starts with http://
+parameters: a url address
 returns: true if valid; false otherwise
 */
 function isValidURL(address) {
@@ -122,7 +122,8 @@ function isValidURL(address) {
 
 /*
 Root
-if logged in, go to /urls; otherwise go to /login
+- if logged in: redirect to /urls;
+- if not logged in: redirect to /login
 */
 app.get('/', (req, res) => {
   if(req.session.user_id) {
@@ -134,95 +135,86 @@ app.get('/', (req, res) => {
 
 /*
 URL index page
-if logged in, shows urls belonging to user; otherwise error to login.
+- if logged in: return 200 response, show site header, show table of urls
+  (short urls, long url, edit/delete buttons) that belong to user, and link to add new shortURL;
+- if not logged in: return 401 response, html with relevant eror message and link to /login
 */
 app.get('/urls', (req, res) => {
-  // console.log(usersDatabase[req.session.user_id])
+  const templateVars = {
+    urls: urlsForUser(req.session.user_id),
+    user: usersDatabase[req.session.user_id]
+  };
+
   if (req.session.user_id) {
-    const templateVars = {
-      urls: urlsForUser(req.session.user_id),
-      user: usersDatabase[req.session.user_id]
-    };
     res.render('urls_index', templateVars);
   } else {
     res.status(401);
-    res.render('urls_error', {
-      user: usersDatabase[req.session.user_id],
-      statusCode: 401,
-      message: 'Please log in or register.'
-    });
+    templateVars['statusCode'] = 401;
+    templateVars['message'] = 'Please log in or register.';
+    res.render('urls_error', templateVars);
   }
 });
 
 /*
 Create new shortURL
-if logged in, render create new page; otherwise error to login
+- if logged in: return 200 response, show site header, show form with text input field
+  for original URL and submit button;
+- if not logged in: return 401 response, html with relevant eror message and link to /login
 */
-// TODO the link has to start with http:// - should make an error? or concatenate on?
 app.get('/urls/new', (req, res) => {
+  const templateVars = {
+    user: usersDatabase[req.session.user_id]
+  };
+
   if(req.session.user_id) {
-    let templateVars = {
-      user: usersDatabase[req.session.user_id]
-    };
     res.render('urls_new', templateVars);
   } else {
     res.status(401);
-    res.render('urls_error', {
-      user: usersDatabase[req.session.user_id],
-      statusCode: 401,
-      message: 'Please log in or register.'
-    });
+    templateVars['statusCode'] = 401;
+    templateVars['message'] = 'Please log in or register.';
+    res.render('urls_error', templateVars);
   }
 });
 
 /*
 Specifc shortURL page
-if logged in, show information of the current shortURL and allow edits/deletions/creations;
-if not logged in, show error to login
+- if not logged in: return 401 response, html with relevant eror message and link to /login
+- if page doesn't exist, return 404 response, html with relevant error message
+- if logged in and URL doesn't belong to user, return 403 response, html with relevant error message
+- if logged in and above cases pass: return 200 response, show shortURL, show
+  form with longURL and update/delete buttons
 */
 app.get('/urls/:id', (req, res) => {
-  // if the user is not logged in, return 401 response
+  const templateVars = {
+    user: usersDatabase[req.session.user_id],
+  };
   if(!req.session.user_id) {
     res.status(401);
-    res.render('urls_error', {
-      user: usersDatabase[req.session.user_id],
-      statusCode: 401,
-      message: 'Please log in or register.'
-    });
-  // if url doesn't exist, send 404 response
+    templateVars['statusCode'] = 401;
+    templateVars['message'] = 'Please log in or register.';
+    res.render('urls_error', templateVars);
   } else if (!urlDatabase[req.params.id]) {
     res.status(404);
-    const templateVarsError = {
-      user: usersDatabase[req.session.user_id],
-      statusCode: 404,
-      message: req.params.id + ' is not a valid shortURL.'
-    };
-    res.render('urls_error', templateVarsError);
-  // if user does not own url, return 403 response
+    templateVars['statusCode'] = 404;
+    templateVars['message'] = req.params.id + ' is not a valid shortURL.';
+    res.render('urls_error', templateVars);
   } else if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     res.status(403);
-    const templateVarsError2 = {
-      user: usersDatabase[req.session.user_id],
-      statusCode: 403,
-      message: req.params.id + ' is not a link that belongs to you.'
-    };
-    res.render('urls_error', templateVarsError2);
-  // otherwise, user is logged in, url exists and belongs to user, and page can be shown
+    templateVars['statusCode'] = 403;
+    templateVars['message'] = req.params.id + ' is not a shortURL that belongs to you.';
+    res.render('urls_error', templateVars);
   } else {
-    const templateVars = {
-      shortURL: req.params.id,
-      urls: urlDatabase,
-      user: usersDatabase[req.session.user_id]
-    };
+    templateVars['shortURL'] = req.params.id;
+    templateVars['urls'] = urlDatabase;
     res.render('urls_show', templateVars);
   }
 });
 
 /*
 Response to delete button
-deletes URL and removes it from urlDatabase
+delete URL and remove it from urlDatabase
 */
-// TODO: might not have to check if it belongs to user since user can only see the ones that belong to them
+// TODO fix else statement
 app.post('/urls/:id/delete', (req, res) => {
   if(urlDatabase[req.params.id].userID === req.session.user_id) {
     delete urlDatabase[req.params.id];
@@ -234,8 +226,9 @@ app.post('/urls/:id/delete', (req, res) => {
 
 /*
 Link to actual URL (longURL)
-redirects short URL address to longurl page
-works if user is not logged in or registered
+- for all users, logged in/registered or not
+- if url exists: redirect to corresponding longURL
+- if url doesn't exist: return 404 response, html with relevant error message
 */
 app.get('/u/:shortURL', (req, res) => {
   if(urlDatabase[req.params.shortURL]) {
@@ -253,10 +246,15 @@ app.get('/u/:shortURL', (req, res) => {
 
 /*
 Response to create new url link
-creates new link and adds to url database
-only for logged in users
+- if logged in: generate shortURL, save link and associated user in urlDatabase,
+and redirect to /urls/:id
+- if not logged in: return 401 response, html with relevant eror message and link to /login
 */
 app.post('/urls', (req, res) => {
+  const templateVars = {
+    user: usersDatabase[req.session.user_id]
+  };
+
   if (req.session.user_id && isValidURL(req.body.longURL)) {
     const newShortURL = generateRandomString(6);
     urlDatabase[newShortURL] = {
@@ -264,28 +262,28 @@ app.post('/urls', (req, res) => {
       userID: req.session.user_id
     };
     res.redirect(`/urls/${newShortURL}`);
+  // additional check to make sure their longURL starts with http://
   } else if (!isValidURL(req.body.longURL)) {
     res.status(406);
-    res.render('urls_error', {
-      user: usersDatabase[req.session.user_id],
-      statusCode: 406,
-      message: 'Please enter valid longURL (starts with http://).'
-    });
+    templateVars['statusCode'] = 406;
+    templateVars['message'] = 'Please enter valid longURL (starts with http://).';
+    res.render('urls_error', templateVars);
   } else {
     res.status(401);
-    res.render('urls_error', {
-      user: usersDatabase[req.session.user_id],
-      statusCode: 401,
-      message: 'Please log in or register.'
-    });
+    templateVars['statusCode'] = 401;
+    templateVars['message'] = 'Please log in or register.';
+    res.render('urls_error', templateVars);
   }
 });
 
 /*
 Response to update button
-updates longURL in urlDatabase
+- if not logged in: return 401 response, html with relevant eror message and link to /login
+- if page doesn't exist, return 404 response, html with relevant error message
+- if logged in and URL doesn't belong to user, return 403 response, html with relevant error message
+- if logged in and above cases pass: update url in urlDatabase and redirect to /urls/:id
 */
-// TODO: make check if edited url is empty or doesn't start with html
+// TODO: add checks above
 app.post('/urls/:id', (req, res) => {
   if(!isValidURL(req.body.longURL)) {
     res.status(406);
@@ -302,7 +300,9 @@ app.post('/urls/:id', (req, res) => {
 
 /*
 Login page
-if user already logged in, redirect; otherwise render login page
+- if logged in, redirect to /
+- if not logged in: return 200 response, show form with email and password input
+  fields and submit button
 */
 app.get('/login', (req, res) => {
   if(req.session.user_id) {
@@ -317,8 +317,10 @@ app.get('/login', (req, res) => {
 
 /*
 User registration
-if user already logged in, redirect; else, render the register page
-*/
+- if logged in, redirect to /
+- if not logged in: return 200 response, show form with email and password input
+  fields and register button
+  */
 app.get('/register', (req, res) => {
   if(req.session.user_id) {
     res.redirect('/');
@@ -332,30 +334,28 @@ app.get('/register', (req, res) => {
 
 /*
 Response to register button
-if all fields filled out and unique email, login, create cookie, and save user
+- if input fields are empty: return 400 reponse, html with relevant error message
+- if email already exists: return 400 response, html with relevant error message
+- if above passes: create user in usersDatabase, encrypt password with bcrypt,
+  set cookie, and redirect to /
 */
 app.post('/register', (req, res) => {
   const emailExists = propInUserDatabase(usersDatabase, 'email', req.body.email);
 
-  // if a field is not filled out, error
+  const templateVars = {
+    user: usersDatabase[req.session.user_id]
+  };
+
   if (!req.body.name || !req.body.email || !req.body.password) {
     res.status(400);
-    res.render('urls_error', {
-      user: usersDatabase[req.session.user_id],
-      statusCode: 400,
-      message: 'Please provide a name, email and password to register.'
-    });
-
-  // if email already exists, error
+    templateVars['statusCode'] = 400;
+    templateVars['message'] = 'Name, email, or password field empty.';
+    res.render('urls_error', templateVars);
   } else if (emailExists) {
     res.status(400);
-    res.render('urls_error', {
-      user: usersDatabase[req.session.user_id],
-      statusCode: 400,
-      message: 'Email is already registered.'
-    });
-
-  //otherwise create the user, hash the password, create cookie, and redirect to root
+    templateVars['statusCode'] = 400;
+    templateVars['message'] = 'Email is already registered.';
+    res.render('urls_error', templateVars);
   } else {
     let randomUserId = 'user' + generateRandomString(5);
     usersDatabase[randomUserId] = {
@@ -364,6 +364,7 @@ app.post('/register', (req, res) => {
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 10)
     };
+    // set cookie
     req.session.user_id = randomUserId;
 
     res.redirect('/');
@@ -372,12 +373,24 @@ app.post('/register', (req, res) => {
 
 /*
 Response to login button
-if password matches, save cookie and redirect; otherwise, show error to login page
+- if email and password parameters match existing user: set cookie and redirect to /
+- if parameters don't match user: return 401 response, html with relevant error message
 */
 app.post('/login', (req, res) => {
+  // recall function returns associated key (userid) if the password/email combo is a match; false otherwise
   const isMatch = passwordMatch(req.body.email, req.body.password);
+  const templateVars = {
+    user: usersDatabase[req.session.user_id]
+  };
 
-  if (isMatch) {
+  // additional check to make sure they didn't leave a field blank
+  if (!req.body.email || !req.body.password) {
+    res.status(400);
+    templateVars['statusCode'] = 400;
+    templateVars['message'] = 'Email or password field empty.';
+    res.render('urls_error', templateVars);
+  }
+  else if (isMatch) {
     req.session['user_id'] = isMatch;
     res.redirect('/');
   } else {
@@ -392,11 +405,11 @@ app.post('/login', (req, res) => {
 
 /*
 Response to logout button
-deletes user_id cookies and redirects
+- delete cookie and redirect to /
 */
 app.post('/logout', (req, res) => {
   // res.clearCookie('user_id');
-  delete req.session.user_id;
+  req.session.user_id = null;
   res.redirect('/');
 });
 
@@ -410,9 +423,6 @@ app.get('/*', (req, res) => {
     statusCode: 404,
     message: 'This is not a valid address.'
   };
-  if (req.session.user_id) {
-    templateVarsError.user = usersDatabase[req.session.user_id];
-  }
   res.render('urls_error', templateVarsError);
 });
 

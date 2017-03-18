@@ -1,10 +1,15 @@
-<!-- shows the short and long form of a specific URL -->
+<!--
+if logged in only and url exists and belongs to user: show shortURL and form with
+longURL and update (POST /urls/:id) and delete (POST /urls/:id/delete) buttons
+-->
 
 <!DOCTYPE html>
 <html lang='en'>
 <head>
   <title>TinyApp <%= shortURL %></title>
+  <meta charset='utf-8'>
 </head>
+
 <body>
   <header>
     <% include partials/_header %>
@@ -15,11 +20,11 @@
 
     <form action='/urls/<%= shortURL %>' method='POST' style='display:inline-block'>
       <input id='longURL' type='text' name='longURL' value='<%= urls[shortURL].longURL %>' style='width: 300px; font-family: sans-serif; font-size: 14px'>
-      <input type='submit' value='Update' style="font-family: sans-serif; font-size: 18px;">
+      <input type='submit' value='Update' style="font-size: 18px;">
     </form>
 
     <form action='/urls/<%=shortURL%>/delete' method='POST' style='display:inline-block' >
-      <input type='submit' value='Delete' style="font-family: sans-serif; font-size: 18px;">
+      <input type='submit' value='Delete' style="font-size: 18px;">
     </form>
   </div>
 
