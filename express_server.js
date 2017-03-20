@@ -22,33 +22,51 @@ app.use(bodyParser.urlencoded({
 }));
 
 // override with POST having ?_method=<method like PUT, POST, DELETE, etc.>
-app.use(methodOverride('_method'))
+app.use(methodOverride('_method'));
 
 // ----- HARDCODED DATABASES -----
 // TODO: export database to a file or something so that new user info is kept
 const urlDatabase = {
   'b2xVn2': {
     longURL: 'http://www.lighthouselabs.ca',
-    userID: 'userRandomID'
+    userID: 'user2k4ks',
+    visits: {
+      'visitor02kfs': ['Sun Mar 19 2017 23:16:05 GMT+0000 (UTC)', 'Sun Mar 19 2017 23:16:49 GMT+0000 (UTC)'],
+      'visitorlsk2j': ['Sat Mar 18 2017 13:25:34 GMT+0000 (UTC)']
+    }
   },
   '9sm5xK': {
     longURL: 'http://www.google.com',
-    userID: 'user2RandomID'
+    userID: 'user2k30s',
+    visits: {
+      'visitor02kfs': ['Sat Mar 18 2017 13:25:34 GMT+0000 (UTC)', 'Sun Mar 19 2017 23:16:49 GMT+0000 (UTC)']
+    }
+  },
+  '4k4fwp': {
+    longURL: 'http://www.example.com',
+    userID: 'userlg0sl',
+    visits: {}
   }
 };
 
 const usersDatabase = {
-  'userRandomID': {
-    id: 'userRandomID',
-    name: 'User Namename',
+  'user2k4ks': {
+    id: 'user2k4ks',
+    name: 'Whymer Chrisy',
     email: 'user@example.com',
-    password: bcrypt.hashSync('purple-monkey-dinosaur', 10)
+    password: bcrypt.hashSync('asf', 10)
   },
-  'user2RandomID': {
-    id: 'user2RandomID',
-    name: 'Cool Lastname',
+  'user2k30s': {
+    id: 'user2k30s',
+    name: 'Alec Pete',
     email: 'user2@example.com',
     password: bcrypt.hashSync('dishwasher-funk', 10)
+  },
+  'userlg0sl': {
+    id: 'userlg0sl',
+    name: 'Sven Coryson',
+    email: 'user3@example.com',
+    password: bcrypt.hashSync('asdf', 10)
   }
 };
 
@@ -108,7 +126,7 @@ function urlsForUser(id) {
 }
 
 /*
-Checks if the input URL (longURL) is valid - i.e. starts with http://
+Checks if the input URL (longURL) is valid - i.e. starts with http:// or https://
 parameters: a url address
 returns: true if valid; false otherwise
 */
@@ -120,6 +138,52 @@ function isValidURL(address) {
   }
 }
 
+/*
+Tracks analystics of session users visiting /u/:shortURL
+parameters: req object (which contains cookie info and the shortURL they're visiting)
+returns: nothing. adds new timestamp to urlDatabase associated with user/visitor cookie.
+*/
+// TODO: don't user user_id, get rid of console.logs
+function track(req) {
+  const visitsInDatabase = urlDatabase[req.params.shortURL]['visits'];
+
+  // creates visitor_id cookie (doesn't use user_id)
+  if (!req.session.visitor_id) {
+    req.session.visitor_id = 'visitor' + generateRandomString(5);
+  }
+
+  if (visitsInDatabase[req.session.visitor_id]) {
+    visitsInDatabase[req.session.visitor_id].push(Date());
+    return;
+  } else {
+    visitsInDatabase[req.session.visitor_id] = [Date()];
+    return;
+  }
+}
+
+/*
+Calculates the total number of visits and total number of unique visits for a given shortURL
+parameters: shortURL (str)
+returns: object with totalVisits (num), uniqueVisits (num), and allVisits (obj)
+*/
+function analytics(shortURL) {
+  const uniqueVisits = Object.keys(urlDatabase[shortURL].visits).length;
+
+  let totalVisits = 0;
+  for (let visitor in urlDatabase[shortURL].visits) {
+    totalVisits += Object.keys(urlDatabase[shortURL].visits[visitor]).length;
+  }
+
+  const allVisits = urlDatabase[shortURL].visits;
+
+  return {
+    totalVisits: totalVisits,
+    uniqueVisits: uniqueVisits,
+    allVisits: allVisits
+  };
+}
+
+
 // ----- ENDPOINT FUNCTIONS -----
 
 /*
@@ -128,7 +192,7 @@ Root
 - if not logged in: redirect to /login
 */
 app.get('/', (req, res) => {
-  if(req.session.user_id) {
+  if (req.session.user_id) {
     res.redirect('/urls');
   } else {
     res.redirect('/login');
@@ -168,7 +232,7 @@ app.get('/urls/new', (req, res) => {
     user: usersDatabase[req.session.user_id]
   };
 
-  if(req.session.user_id) {
+  if (req.session.user_id) {
     res.render('urls_new', templateVars);
   } else {
     res.status(401);
@@ -190,7 +254,7 @@ app.get('/urls/:id', (req, res) => {
   const templateVars = {
     user: usersDatabase[req.session.user_id]
   };
-  if(!req.session.user_id) {
+  if (!req.session.user_id) {
     res.status(401);
     templateVars['statusCode'] = 401;
     templateVars['message'] = 'Please log in or register.';
@@ -208,6 +272,7 @@ app.get('/urls/:id', (req, res) => {
   } else {
     templateVars['shortURL'] = req.params.id;
     templateVars['urls'] = urlDatabase;
+    templateVars['analytics'] = analytics(req.params.id);
     res.render('urls_show', templateVars);
   }
 });
@@ -216,13 +281,18 @@ app.get('/urls/:id', (req, res) => {
 Response to delete button
 delete URL and remove it from urlDatabase
 */
-// TODO fix else statement
 app.delete('/urls/:id/delete', (req, res) => {
-  if(urlDatabase[req.params.id].userID === req.session.user_id) {
+  if (urlDatabase[req.params.id].userID === req.session.user_id) {
     delete urlDatabase[req.params.id];
     res.redirect('/urls');
   } else {
-    res.send('you can only delete your own links');
+    res.status(403);
+    const templateVars = {
+      user: usersDatabase[req.session.user_id],
+      statusCode: 403,
+      message: req.params.id + ' is not a shortURL that belongs to you.'
+    };
+    res.render('urls_error', templateVars);
   }
 });
 
@@ -233,7 +303,9 @@ Link to actual URL (longURL)
 - if url doesn't exist: return 404 response, html with relevant error message
 */
 app.get('/u/:shortURL', (req, res) => {
-  if(urlDatabase[req.params.shortURL]) {
+  if (urlDatabase[req.params.shortURL]) {
+    // TODO: add analytics to urlDatabase
+    track(req);
     res.redirect(urlDatabase[req.params.shortURL].longURL);
   } else {
     res.status(404);
@@ -252,7 +324,6 @@ Response to create new url link
 and redirect to /urls/:id
 - if not logged in: return 401 response, html with relevant eror message and link to /login
 */
-
 app.post('/urls', (req, res) => {
   const templateVars = {
     user: usersDatabase[req.session.user_id]
@@ -262,7 +333,8 @@ app.post('/urls', (req, res) => {
     const newShortURL = generateRandomString(6);
     urlDatabase[newShortURL] = {
       longURL: req.body.longURL,
-      userID: req.session.user_id
+      userID: req.session.user_id,
+      visits: {}
     };
     res.redirect(`/urls/${newShortURL}`);
   // additional check to make sure their longURL starts with http://
@@ -288,7 +360,7 @@ Response to update button
 */
 // TODO: add checks above
 app.put('/urls/:id', (req, res) => {
-  if(!isValidURL(req.body.longURL)) {
+  if (!isValidURL(req.body.longURL)) {
     res.status(406);
     res.render('urls_error', {
       user: usersDatabase[req.session.user_id],
@@ -308,7 +380,7 @@ Login page
   fields and submit button
 */
 app.get('/login', (req, res) => {
-  if(req.session.user_id) {
+  if (req.session.user_id) {
     res.redirect('/');
   } else {
     let templateVars = {
@@ -323,9 +395,9 @@ User registration
 - if logged in, redirect to /
 - if not logged in: return 200 response, show form with email and password input
   fields and register button
-  */
+*/
 app.get('/register', (req, res) => {
-  if(req.session.user_id) {
+  if (req.session.user_id) {
     res.redirect('/');
   } else {
     let templateVars = {

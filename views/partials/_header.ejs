@@ -6,7 +6,7 @@
 
   <div style='padding:10px'>
 
-    <% if(user) { %>
+    <% if (user) { %>
       Welcome <%= user.name %> (<%= user.email %>)!
 
       <form method='POST' action='/logout?_method=DELETE' style='display:inline-block' >

@@ -16,7 +16,7 @@ longURL and update (POST /urls/:id) and delete (POST /urls/:id/delete) buttons
   </header>
 
   <div style='font-family:sans-serif; text-align:center'>
-    <h3>ShortURL: <%= shortURL %></h3>
+    <h3>ShortURL <%= shortURL %></h3>
 
     <form method='POST' action='/urls/<%= shortURL %>?_method=PUT' style='display:inline-block'>
       <input id='longURL' type='text' name='longURL' value='<%= urls[shortURL].longURL %>' style='width: 300px; font-family: sans-serif; font-size: 14px'>
@@ -26,6 +26,43 @@ longURL and update (POST /urls/:id) and delete (POST /urls/:id/delete) buttons
     <form method='POST' action='/urls/<%=shortURL%>/delete?_method=DELETE' style='display:inline-block' >
       <input type='submit' value='Delete' style="font-size: 18px;">
     </form>
+
+
+    <h3>Total Visits:</h3>
+    <p>
+     <%=analytics.totalVisits%>
+    </p>
+
+    <h3>Unique Visits:</h3>
+    <p>
+      <%=analytics.uniqueVisits%>
+    </p>
+
+    <h3>Visitor Data:</h3>
+    
+    <table style='margin:auto'>
+      <tr valign=top>
+        <%for (let prop in analytics.allVisits) {%>
+          <td>
+            <table valign=top>
+              <thead>
+                <tr>
+                  <th><%=prop%></th>
+                </tr>
+              </thead>
+              <tbody>
+                <%analytics.allVisits[prop].forEach((element) => { %>
+                  <tr>
+                    <td><%=element%></td>
+                  </tr>
+                <%})%>
+              </tbody>
+            </table>
+          </td>
+        <%}%>
+      </tr>
+    </table>
+
   </div>
 
   <footer>
